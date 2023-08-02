@@ -153,5 +153,3 @@ def paaohjelma():
             print("Virheellinen syöte. Yritä uudelleen.")
 
 paaohjelma()
-
-## joe
