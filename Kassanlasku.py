@@ -46,7 +46,7 @@ class KASSA:
             for tyyppi in ["s", "k"]:
                 for arvo in sorted(self.valuutat[tyyppi], reverse=True):
                     maara = self.kassa[tyyppi][arvo]
-                    while maara > 0 and ylimaaraiset - arvo >= 0:
+                    while maara > 0 and ylimaaraiset - arvo >= -0.01:
                         if arvo not in ylimaaraiset_setelit_kolikot[tyyppi]:
                             ylimaaraiset_setelit_kolikot[tyyppi][arvo] = 0
                         ylimaaraiset_setelit_kolikot[tyyppi][arvo] += 1
@@ -58,7 +58,7 @@ class KASSA:
                     print("{:<10}{:<15}{:<10.2f}".format(arvo, int(maara), arvo*maara))
                 print("Tilitettävä summa " + ("seteleissä:" if tyyppi == "s" else "kolikoissa:") + " " + str(round(tilitettava_summa[tyyppi], 2)) + "€")
 
-            print("Tilitettävä kokonaissumma on: " + str(sum(tilitettava_summa.values())) + "€")
+            print("Tilitettävä kokonaissumma on: " + str(round(sum(tilitettava_summa.values()), 2)) + "€")
 
     def muokkaa_rahaa(self, tyyppi, arvo, uusi_maara): # Muuttaa rahan määrää 
         if arvo in self.kassa[tyyppi]:
