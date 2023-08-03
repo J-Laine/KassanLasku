@@ -1,4 +1,4 @@
-class Kassa: 
+class KASSA: 
     def __init__(self): # Määritellään setelit (s) ja kolikot (k) niiden nimellisarvojen mukaan.
         self.valuutat = {
             "s": [500, 200, 100, 50, 20, 10, 5], 
@@ -145,7 +145,7 @@ def laske_tase(kassa):
 
 
 def paaohjelma():
-    kassa = Kassa()
+    kassa = KASSA()
     print("Tämä on kassan tilitysohjelma.\n")
     maara_vai_summa = ""
     # Kysytään käyttäjältä haluaako hän syöttää rahan määrän vai summan.
