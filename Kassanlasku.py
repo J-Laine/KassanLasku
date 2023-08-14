@@ -4,6 +4,7 @@ class KASSA:
             "s": [500, 200, 100, 50, 20, 10, 5], 
             "k": [2, 1, 0.5, 0.2, 0.1, 0.05] 
         }
+        
         self.kassa = self.alusta_kassa() # Alustetaan kassa alusta_kassa -metodilla.
 
     def alusta_kassa(self): # Alustaa kassan määrittelemällä setelit ja kolikot
@@ -24,7 +25,6 @@ class KASSA:
 
     def tyhjenna_kassa(self): # Tyhjentää kassan alustamalla sen uudelleen.
         self.kassa = self.alusta_kassa()
-
     def tulosta_kassa(self):# Tulostaa kassan sisällön ja laskee kassan taseen.
         print("\n{:<10}{:<15}{:<10}".format('Arvo €', 'Määrä kpl', 'Summa €'))
         print("\nSetelit:")
@@ -43,9 +43,14 @@ class KASSA:
             tilitettava_summa = {"s": 0, "k": 0}
             print("\nTilitettävät rahat (yli 400€):")
             print("{:<10}{:<15}{:<10}".format('Arvo €', 'Määrä kpl', 'Summa €'))
+
+            # Huomioitu 50€ ja 20€ setelit, joita pitää jättää kassaan tietty määrä.
+            minimaalinen_maara = {500: 0, 200: 0, 100: 0, 50: 2, 20: 5, 10: 3, 5: 2, 
+                                  2: 6, 1: 6, 0.5: 6, 0.2: 6, 0.1: 6, 0.05: 10}
+            
             for tyyppi in ["s", "k"]:
                 for arvo in sorted(self.valuutat[tyyppi], reverse=True):
-                    maara = self.kassa[tyyppi][arvo]
+                    maara = self.kassa[tyyppi][arvo] - minimaalinen_maara.get(arvo, 0)
                     while maara > 0 and ylimaaraiset - arvo >= -0.01:
                         if arvo not in ylimaaraiset_setelit_kolikot[tyyppi]:
                             ylimaaraiset_setelit_kolikot[tyyppi][arvo] = 0
