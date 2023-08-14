@@ -44,7 +44,7 @@ class KASSA:
             print("\nTilitettävät rahat (yli 400€):")
             print("{:<10}{:<15}{:<10}".format('Arvo €', 'Määrä kpl', 'Summa €'))
 
-            # Huomioitu 50€ ja 20€ setelit, joita pitää jättää kassaan tietty määrä.
+            # setelien ja kolikoiden minimimäärän luonti
             minimaalinen_maara = {500: 0, 200: 0, 100: 0, 50: 2, 20: 5, 10: 3, 5: 2, 
                                   2: 6, 1: 6, 0.5: 6, 0.2: 6, 0.1: 6, 0.05: 10}
             
