@@ -25,41 +25,65 @@ class KASSA:
 
     def tyhjenna_kassa(self): # Tyhjentää kassan alustamalla sen uudelleen.
         self.kassa = self.alusta_kassa()
-    def tulosta_kassa(self):# Tulostaa kassan sisällön ja laskee kassan taseen.
+        
+    def tulosta_kassa(self): 
         print("\n{:<10}{:<15}{:<10}".format('Arvo €', 'Määrä kpl', 'Summa €'))
         print("\nSetelit:")
         for arvo, maara in self.kassa["s"].items(): 
             print("{:<10}{:<15}{:<10.2f}".format(arvo, int(maara), arvo*maara))
-    
+        
         print("\nKolikot:")
         for arvo, maara in self.kassa["k"].items(): 
             print("{:<10}{:<15}{:<10.2f}".format(arvo, int(maara), arvo*maara))
-
+        
         print("Kassan tase on: " + str(self.laske_tase()) + "€")
 
-        if self.laske_tase() > 400: # Jos kassan tase ylittää 400€, tulostaa ylimääräiset rahat, jotka tulee tilitettäväksi.
+        if self.laske_tase() > 400: 
             ylimaaraiset = self.laske_tase() - 400
             ylimaaraiset_setelit_kolikot = {"s": {}, "k": {}}
             tilitettava_summa = {"s": 0, "k": 0}
             print("\nTilitettävät rahat (yli 400€):")
             print("{:<10}{:<15}{:<10}".format('Arvo €', 'Määrä kpl', 'Summa €'))
-
-            # setelien ja kolikoiden minimimäärän luonti
-            minimaalinen_maara = {500: 0, 200: 0, 100: 0, 50: 2, 20: 5, 10: 3, 5: 2, 
-                                  2: 6, 1: 6, 0.5: 6, 0.2: 6, 0.1: 6, 0.05: 10}
             
+            minimaalinen_maara = {500: 0, 200: 0, 100: 0, 50: 8, 20: 5, 10: 3, 5: 2, 
+                      2: 6, 1: 6, 0.5: 6, 0.2: 6, 0.1: 6, 0.05: 10}
+
+            # Yhdistä setelit ja kolikot yhdeksi listaksi
+            kaikki_rahat = []
             for tyyppi in ["s", "k"]:
-                for arvo in sorted(self.valuutat[tyyppi], reverse=True):
-                    maara = self.kassa[tyyppi][arvo] - minimaalinen_maara.get(arvo, 0)
-                    while maara > 0 and ylimaaraiset - arvo >= -0.01:
+                for arvo in self.valuutat[tyyppi]:
+                    kaikki_rahat.append((tyyppi, arvo))
+
+            # Järjestä lista suurimmasta arvosta pienimpään
+            kaikki_rahat.sort(key=lambda x: x[1], reverse=True)
+
+            # Ota ylimääräiset rahat listasta
+            for tyyppi, arvo in kaikki_rahat:
+                maara = self.kassa[tyyppi][arvo] - minimaalinen_maara.get(arvo, 0)
+                while maara > 0 and ylimaaraiset - arvo >= -0.01:
+                    if arvo not in ylimaaraiset_setelit_kolikot[tyyppi]:
+                        ylimaaraiset_setelit_kolikot[tyyppi][arvo] = 0
+                    ylimaaraiset_setelit_kolikot[tyyppi][arvo] += 1
+                    ylimaaraiset -= arvo
+                    tilitettava_summa[tyyppi] += arvo
+                    maara -= 1
+                    self.kassa[tyyppi][arvo] -= 1
+
+            # Jos ylimääräiset eivät riitä, otetaan lisää rahoja niin, että kunkin rahan määrä on mahdollisimman lähellä minimimäärää
+            if ylimaaraiset > 0:
+                for tyyppi, arvo in sorted(kaikki_rahat, key=lambda x: abs(self.kassa[x[0]][x[1]] - minimaalinen_maara.get(x[1], 0))):
+                    while self.kassa[tyyppi][arvo] > 0 and ylimaaraiset - arvo >= 0:
                         if arvo not in ylimaaraiset_setelit_kolikot[tyyppi]:
                             ylimaaraiset_setelit_kolikot[tyyppi][arvo] = 0
                         ylimaaraiset_setelit_kolikot[tyyppi][arvo] += 1
                         ylimaaraiset -= arvo
                         tilitettava_summa[tyyppi] += arvo
-                        maara -= 1
+                        self.kassa[tyyppi][arvo] -= 1
+
+            # Tulostetaan tilitettävät setelit ja kolikot
+            for tyyppi in ["s", "k"]:
                 print("\n" + ("Setelit:" if tyyppi == "s" else "Kolikot:"))
-                for arvo, maara in ylimaaraiset_setelit_kolikot[tyyppi].items():
+                for arvo, maara in sorted(ylimaaraiset_setelit_kolikot[tyyppi].items(), key=lambda item: item[0], reverse=True):
                     print("{:<10}{:<15}{:<10.2f}".format(arvo, int(maara), arvo*maara))
                 print("Tilitettävä summa " + ("seteleissä:" if tyyppi == "s" else "kolikoissa:") + " " + str(round(tilitettava_summa[tyyppi], 2)) + "€")
 
