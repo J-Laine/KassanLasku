@@ -1,66 +1,68 @@
-class KASSA: 
-    def __init__(self): # Määritellään setelit (s) ja kolikot (k) niiden nimellisarvojen mukaan.
-        self.valuutat = {
-            "s": [500, 200, 100, 50, 20, 10, 5], 
-            "k": [2, 1, 0.5, 0.2, 0.1, 0.05] 
-        }
-        
-        self.kassa = self.alusta_kassa() # Alustetaan kassa alusta_kassa -metodilla.
+from decimal import Decimal, InvalidOperation
 
-    def alusta_kassa(self): # Alustaa kassan määrittelemällä setelit ja kolikot
+class KASSA: 
+    def __init__(self): 
+        self.valuutat = {
+            "s": [Decimal('500'), Decimal('200'), Decimal('100'), Decimal('50'), Decimal('20'), Decimal('10'), Decimal('5')], 
+            "k": [Decimal('2'), Decimal('1'), Decimal('0.5'), Decimal('0.2'), Decimal('0.1'), Decimal('0.05')] 
+        }
+        self.kassa = self.alusta_kassa()
+
+    def alusta_kassa(self): 
         return {
             "s": dict.fromkeys(self.valuutat["s"], 0),
             "k": dict.fromkeys(self.valuutat["k"], 0)
         }
 
-    def lisaa_rahaa(self, tyyppi, arvo, maara): # Metodi rahan lisäämiseen kassaan. 
-        self.kassa[tyyppi][arvo] += maara
+    def lisaa_rahaa(self, tyyppi, arvo, maara): 
+        self.kassa[tyyppi][Decimal(arvo)] += maara
 
-    def laske_tase(self): # Laskee kassan taseen summaamalla setelien ja kolikoiden arvot.
-        tase = 0
+    def laske_tase(self): 
+        tase = Decimal('0')
         for tyyppi in ["s", "k"]:
             for arvo, maara in self.kassa[tyyppi].items():
-                tase += arvo * maara
-        return round(tase, 2)
+                tase += arvo * Decimal(maara)
+        return tase
 
-    def tyhjenna_kassa(self): # Tyhjentää kassan alustamalla sen uudelleen.
+    def tyhjenna_kassa(self):
         self.kassa = self.alusta_kassa()
         
+
     def tulosta_kassa(self): 
         print("\n{:<10}{:<15}{:<10}".format('Arvo €', 'Määrä kpl', 'Summa €'))
         print("\nSetelit:")
         for arvo, maara in self.kassa["s"].items(): 
-            print("{:<10}{:<15}{:<10.2f}".format(arvo, int(maara), arvo*maara))
+            print("{:<10}{:<15}{:<10.2f}".format(arvo, int(maara), Decimal(arvo)*Decimal(maara)))
         
         print("\nKolikot:")
         for arvo, maara in self.kassa["k"].items(): 
-            print("{:<10}{:<15}{:<10.2f}".format(arvo, int(maara), arvo*maara))
+            print("{:<10}{:<15}{:<10.2f}".format(arvo, int(maara), Decimal(arvo)*Decimal(maara)))
         
-        print("Kassan tase on: " + str(self.laske_tase()) + "€")
+        kassan_tase = Decimal(self.laske_tase())
+        print("Kassan tase on: " + str(kassan_tase) + "€")
 
-        if self.laske_tase() > 400: 
-            ylimaaraiset = self.laske_tase() - 400
+        if kassan_tase > Decimal('400'): 
+            ylimaaraiset = kassan_tase - Decimal('400')
             ylimaaraiset_setelit_kolikot = {"s": {}, "k": {}}
-            tilitettava_summa = {"s": 0, "k": 0}
+            tilitettava_summa = {"s": Decimal('0'), "k": Decimal('0')}
             print("\nTilitettävät rahat (yli 400€):")
             print("{:<10}{:<15}{:<10}".format('Arvo €', 'Määrä kpl', 'Summa €'))
             
             minimaalinen_maara = {500: 0, 200: 0, 100: 0, 50: 8, 20: 5, 10: 3, 5: 2, 
-                      2: 6, 1: 6, 0.5: 6, 0.2: 6, 0.1: 6, 0.05: 10}
+                    2: 6, 1: 6, 0.5: 6, 0.2: 6, 0.1: 6, 0.05: 10}
 
-            # Yhdistä setelit ja kolikot yhdeksi listaksi
+            # Yhdistä setelit ja kolikot yhdeksi listaksi ja käytä Decimal-arvoja
             kaikki_rahat = []
             for tyyppi in ["s", "k"]:
                 for arvo in self.valuutat[tyyppi]:
-                    kaikki_rahat.append((tyyppi, arvo))
+                    kaikki_rahat.append((tyyppi, Decimal(arvo)))
 
-            # Järjestä lista suurimmasta arvosta pienimpään
             kaikki_rahat.sort(key=lambda x: x[1], reverse=True)
 
-            # Ota ylimääräiset rahat listasta
+            # Lasketaan ylimääräiset rahat
             for tyyppi, arvo in kaikki_rahat:
                 maara = self.kassa[tyyppi][arvo] - minimaalinen_maara.get(arvo, 0)
-                while maara > 0 and ylimaaraiset - arvo >= -0.01:
+                while maara > 0 and ylimaaraiset - arvo >= Decimal('0'):
                     if arvo not in ylimaaraiset_setelit_kolikot[tyyppi]:
                         ylimaaraiset_setelit_kolikot[tyyppi][arvo] = 0
                     ylimaaraiset_setelit_kolikot[tyyppi][arvo] += 1
@@ -69,10 +71,10 @@ class KASSA:
                     maara -= 1
                     self.kassa[tyyppi][arvo] -= 1
 
-            # Jos ylimääräiset eivät riitä, otetaan lisää rahoja niin, että kunkin rahan määrä on mahdollisimman lähellä minimimäärää
-            if ylimaaraiset > 0:
-                for tyyppi, arvo in sorted(kaikki_rahat, key=lambda x: abs(self.kassa[x[0]][x[1]] - minimaalinen_maara.get(x[1], 0))):
-                    while self.kassa[tyyppi][arvo] > 0 and ylimaaraiset - arvo >= 0:
+            # Ota lisää rahoja, jos tarpeen
+            if ylimaaraiset > Decimal('0'):
+                for tyyppi, arvo in sorted(kaikki_rahat, key=lambda x: abs(self.kassa[x[0]][x[1]] - Decimal(minimaalinen_maara.get(x[1], 0)))):
+                    while self.kassa[tyyppi][arvo] > 0 and ylimaaraiset - arvo >= Decimal('0'):
                         if arvo not in ylimaaraiset_setelit_kolikot[tyyppi]:
                             ylimaaraiset_setelit_kolikot[tyyppi][arvo] = 0
                         ylimaaraiset_setelit_kolikot[tyyppi][arvo] += 1
@@ -84,94 +86,82 @@ class KASSA:
             for tyyppi in ["s", "k"]:
                 print("\n" + ("Setelit:" if tyyppi == "s" else "Kolikot:"))
                 for arvo, maara in sorted(ylimaaraiset_setelit_kolikot[tyyppi].items(), key=lambda item: item[0], reverse=True):
-                    print("{:<10}{:<15}{:<10.2f}".format(arvo, int(maara), arvo*maara))
-                print("Tilitettävä summa " + ("seteleissä:" if tyyppi == "s" else "kolikoissa:") + " " + str(round(tilitettava_summa[tyyppi], 2)) + "€")
+                    print("{:<10}{:<15}{:<10.2f}".format(arvo, int(maara), Decimal(arvo)*Decimal(maara)))
+                print("Tilitettävä summa " + ("seteleissä:" if tyyppi == "s" else "kolikoissa:") + " " + str(tilitettava_summa[tyyppi]) + "€")
 
-            print("Tilitettävä kokonaissumma on: " + str(round(sum(tilitettava_summa.values()), 2)) + "€")
+            print("Tilitettävä kokonaissumma on: " + str(sum(tilitettava_summa.values())) + "€")
 
-    def muokkaa_rahaa(self, tyyppi, arvo, uusi_maara): # Muuttaa rahan määrää 
-        if arvo in self.kassa[tyyppi]:
-            self.kassa[tyyppi][arvo] = uusi_maara
+
+    def muokkaa_rahaa(self, tyyppi, arvo, uusi_maara): 
+        arvo_decimal = Decimal(str(arvo))
+        if arvo_decimal in self.kassa[tyyppi]:
+            self.kassa[tyyppi][arvo_decimal] = uusi_maara
         else:
             print(f"Arvoa {arvo} ei löydy kassasta.")
 
 
 def lisaa_rahaa(kassa, maara_vai_summa):
-    # Käy läpi sanakirjan avaimet ("s" ja "k").
     for tyyppi in ["s", "k"]:
-        # Tulosta rahan tyyppi, joko setelit tai kolikot.
         print(f"\n{tyyppi.upper()} - {'Setelit' if tyyppi == 's' else 'Kolikot'}")
-        # Käy läpi arvot, jotka liittyvät nykyiseen avaimen tyyppiin sanakirjassa.
         for arvo in kassa.valuutat[tyyppi]:
             while True:
                 try:
-                    # Riippuen käyttäjän valinnasta, pyydä joko lukumäärää tai kokonaissummaa 
                     if maara_vai_summa == "m":
                         maara = int(input(f"Syötä kappalemäärä rahalle {arvo}: "))
                     else:
-                        summa = float(input(f"Syötä summa rahalle {arvo}: "))
+                        summa = Decimal(input(f"Syötä summa rahalle {arvo}: "))
+                        arvo_decimal = Decimal(str(arvo))
+                        
                         # Jos kokonaissumma on jaollinen setelin/kolikon arvolla,
                         # laske setelien/kolikoiden lukumäärä.
-                        if abs(summa % arvo) < 1e-5 or abs(summa % arvo - arvo) < 1e-5:
-                            maara = round(summa / arvo)
+                        if summa % arvo_decimal == 0:
+                            maara = int(summa / arvo_decimal)
                         else:
                             # Jos kokonaissumma ei ole jaollinen setelin/kolikon arvolla,
                             # tulosta virheilmoitus ja pyydä setelin/kolikon summa uudelleen.
                             print("Summan pitää olla jaollinen annetulla kolikolla/setelillä. Yritä uudelleen.")
                             continue
                     break
-                except ValueError:
+                except (ValueError, InvalidOperation):
                     # Jos käyttäjän syöte ei ole numero, tulosta virheilmoitus ja kysy syötettä uudelleen.
                     print("Virheellinen syöte. Yritä uudelleen.")
-            # Lisää lukumäärä seteleitä/kolikoita kassaan.
             kassa.lisaa_rahaa(tyyppi, arvo, maara)
+
 
 def muokkaa_rahaa(kassa, maara_vai_summa):
     tyyppi = ""
-    # Pyydä käyttäjältä, haluaako hän muokata seteleitä vai kolikoita.
-    # Jatka kysymistä, kunnes käyttäjä antaa kelvollisen syötteen.
     while tyyppi not in ["s", "k"]:
         tyyppi = input("Muokataanko seteleitä vai kolikoita? (s/k): ").lower()
         if tyyppi not in ["s", "k"]:
             print("Virheellinen syöte. Yritä uudelleen.")
     while True:
         try:
-            # Pyydä käyttäjältä setelien/kolikoiden arvo, jota hän haluaa muokata.
-            arvo = float(input("Syötä arvo, jonka määrää haluat muokata: "))
+            arvo = Decimal(input("Syötä arvo, jonka määrää haluat muokata: "))
             if arvo in kassa.kassa[tyyppi]:
                 while True:
                     try:
-                        # Riippuen käyttäjän valinnasta, pyydä joko uusi lukumäärä tai kokonaissumma seteleinä tai kolikoina.
                         if maara_vai_summa == "m":
                             uusi_maara = int(input("Syötä uusi kappalemäärä: "))
                         else:
-                            summa = float(input(f"Syötä uusi summa rahalle {int(arvo)}€: "))
-                            # Jos kokonaissumma on jaollinen setelin/kolikon arvolla laske setelien/kolikoiden lukumäärä.
-                            if abs(summa % arvo) < 1e-5 or abs(summa % arvo - arvo) < 1e-5:
-                                uusi_maara = round(summa / arvo)
+                            summa = Decimal(input(f"Syötä uusi summa rahalle {int(arvo)}€: "))
+                            arvo_decimal = Decimal(str(arvo))
+                            if summa % arvo_decimal == 0:
+                                uusi_maara = int(summa / arvo_decimal)
                             else:
-                                # Jos kokonaissumma ei ole jaollinen setelin/kolikon arvolla,
-                                # tulosta virheilmoitus ja kysy uusi summa
                                 print("Summan pitää olla jaollinen annetulla kolikolla/setelillä. Yritä uudelleen.")
                                 continue
                         break
-                    except ValueError:
-                        # Jos käyttäjän syöte ei ole numero, tulosta virheilmoitus ja kysy syöte uudelleen.
+                    except (ValueError, InvalidOperation):
                         print("Virheellinen syöte. Yritä uudelleen.")
-                # Muokkaa setelien/kolikoiden lukumäärä kassassa.
                 kassa.muokkaa_rahaa(tyyppi, arvo, uusi_maara)
                 break
             else:
-                # Jos käyttäjän antamaa arvoa ei löydy kassasta,
-                # tulosta virheilmoitus ja kysy arvo uudelleen.
                 print(f"Arvoa {int(arvo)}€ ei löydy " + ("seteleistä" if tyyppi == "s" else "kolikoista") + " yritä uudelleen.")
-        except ValueError:
-            # Jos käyttäjän syöte ei ole numero, tulosta virheilmoitus ja kysy syöte uudelleen
+        except (ValueError, InvalidOperation):
             print("Virheellinen syöte. Yritä uudelleen.")
-
+            
 def laske_tase(kassa):
     print("Kassan tase on: " + str(kassa.laske_tase()) + "€")  # Laskee kassan taseen summaamalla setelien ja kolikoiden arvot.
-
 
 def paaohjelma():
     kassa = KASSA()
